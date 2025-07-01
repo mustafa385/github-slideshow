@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Metin Seçim ve Kopyalama Uygulaması</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            font-weight: 300;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .main-content {
+            padding: 40px;
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(52, 152, 219, 0.4);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn.danger {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            box-shadow: 0 4px 15px rgba(231, 76, 60, 0.3);
+        }
+
+        .btn.danger:hover {
+            box-shadow: 0 6px 20px rgba(231, 76, 60, 0.4);
+        }
+
+        .btn.success {
+            background: linear-gradient(135deg, #27ae60, #229954);
+            box-shadow: 0 4px 15px rgba(39, 174, 96, 0.3);
+        }
+
+        .btn.success:hover {
+            box-shadow: 0 6px 20px rgba(39, 174, 96, 0.4);
+        }
+
+        .text-area {
+            position: relative;
+            min-height: 400px;
+            border: 3px dashed #ddd;
+            border-radius: 15px;
+            padding: 30px;
+            font-size: 1.1rem;
+            line-height: 1.8;
+            color: #333;
+            background: #fafafa;
+            cursor: crosshair;
+            user-select: none;
+            transition: all 0.3s ease;
+        }
+
+        .text-area:hover {
+            border-color: #3498db;
+            background: #f8f9fa;
+        }
+
+        .text-area.selecting {
+            cursor: crosshair;
+        }
+
+        .selection-box {
+            position: absolute;
+            border: 2px solid #3498db;
+            background: rgba(52, 152, 219, 0.1);
+            border-radius: 8px;
+            pointer-events: none;
+            z-index: 10;
+            box-shadow: 0 4px 15px rgba(52, 152, 219, 0.2);
+        }
+
+        .highlight {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+            padding: 2px 6px;
+            border-radius: 4px;
+            animation: highlightPulse 0.5s ease-in-out;
+        }
+
+        @keyframes highlightPulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        .output-section {
+            margin-top: 40px;
+            padding: 30px;
+            background: #f8f9fa;
+            border-radius: 15px;
+            border: 1px solid #e9ecef;
+        }
+
+        .output-section h3 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        .output-text {
+            background: white;
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            padding: 20px;
+            min-height: 120px;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 1rem;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            resize: vertical;
+            transition: all 0.3s ease;
+        }
+
+        .output-text:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 10px rgba(52, 152, 219, 0.2);
+        }
+
+        .copy-feedback {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #27ae60;
+            color: white;
+            padding: 15px 25px;
+            border-radius: 10px;
+            font-weight: 500;
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+            z-index: 1000;
+            box-shadow: 0 4px 15px rgba(39, 174, 96, 0.3);
+        }
+
+        .copy-feedback.show {
+            transform: translateX(0);
+        }
+
+        .status {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 10px;
+            font-weight: 500;
+            text-align: center;
+        }
+
+        .status.info {
+            background: #e3f2fd;
+            color: #1976d2;
+            border: 1px solid #bbdefb;
+        }
+
+        .status.success {
+            background: #e8f5e8;
+            color: #2e7d32;
+            border: 1px solid #c8e6c9;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                margin: 10px;
+                border-radius: 15px;
+            }
+            
+            .header {
+                padding: 20px;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .main-content {
+                padding: 20px;
+            }
+            
+            .controls {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .btn {
+                width: 100%;
+                max-width: 300px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📝 Metin Seçim Uygulaması</h1>
+            <p>Fareyi sürükleyerek metin seçin ve kopyalayın</p>
+        </div>
+        
+        <div class="main-content">
+            <div class="controls">
+                <button class="btn" id="startSelection">🎯 Seçim Modunu Başlat</button>
+                <button class="btn success" id="copyText">📋 Seçili Metni Kopyala</button>
+                <button class="btn danger" id="clearSelection">🗑️ Seçimi Temizle</button>
+            </div>
+            
+            <div class="text-area" id="textArea">
+                <p>Bu bir örnek metin alanıdır. Fareyle sürükleyerek herhangi bir bölümü seçebilirsiniz. Bu uygulama sayesinde kolayca metin seçimi yapabilir ve seçilen metni kopyalayabilirsiniz.</p>
+                
+                <p>Metin seçimini başlatmak için yukarıdaki "Seçim Modunu Başlat" butonuna tıklayın. Ardından fareyi bu metin üzerinde sürükleyerek istediğiniz bölümü seçin.</p>
+                
+                <p>Seçim tamamlandığında, seçilen metin vurgulanacak ve aşağıdaki çıktı alanında görünecektir. "Seçili Metni Kopyala" butonuyla metni panoya kopyalayabilirsiniz.</p>
+                
+                <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris.</p>
+                
+                <p>Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
+                
+                <p>Bu uygulama tamamen tarayıcıda çalışır ve internet bağlantısı gerektirmez. Seçtiğiniz metinler güvenle işlenir ve hiçbir yere gönderilmez.</p>
+                
+                <p>Farklı metin türleri de test edebilirsiniz: <strong>Kalın metin</strong>, <em>italik metin</em>, ve <u>altı çizili metin</u> gibi formatlanmış metinler de desteklenir.</p>
+                
+                <p>Uygulama mobil cihazlarda da kullanılabilir. Dokunmatik ekranlarda parmağınızla sürükleyerek seçim yapabilirsiniz.</p>
+            </div>
+            
+            <div class="output-section">
+                <h3>🎯 Seçilen Metin</h3>
+                <textarea class="output-text" id="outputText" placeholder="Seçilen metin burada görünecek..." readonly></textarea>
+                <div class="status info" id="status">
+                    Metin seçmek için yukarıdaki "Seçim Modunu Başlat" butonuna tıklayın
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="copy-feedback" id="copyFeedback">
+        ✅ Metin panoya kopyalandı!
+    </div>
+
+    <script>
+        class TextSelector {
+            constructor() {
+                this.textArea = document.getElementById('textArea');
+                this.outputText = document.getElementById('outputText');
+                this.status = document.getElementById('status');
+                this.copyFeedback = document.getElementById('copyFeedback');
+                
+                this.isSelecting = false;
+                this.startX = 0;
+                this.startY = 0;
+                this.selectionBox = null;
+                this.selectedText = '';
+                
+                this.initializeEventListeners();
+            }
+            
+            initializeEventListeners() {
+                // Buton event listeners
+                document.getElementById('startSelection').addEventListener('click', () => {
+                    this.startSelectionMode();
+                });
+                
+                document.getElementById('copyText').addEventListener('click', () => {
+                    this.copySelectedText();
+                });
+                
+                document.getElementById('clearSelection').addEventListener('click', () => {
+                    this.clearSelection();
+                });
+                
+                // Mouse events
+                this.textArea.addEventListener('mousedown', (e) => {
+                    if (this.isSelecting) {
+                        this.startSelection(e);
+                    }
+                });
+                
+                this.textArea.addEventListener('mousemove', (e) => {
+                    if (this.isSelecting && this.selectionBox) {
+                        this.updateSelection(e);
+                    }
+                });
+                
+                this.textArea.addEventListener('mouseup', (e) => {
+                    if (this.isSelecting && this.selectionBox) {
+                        this.endSelection(e);
+                    }
+                });
+                
+                // Touch events for mobile
+                this.textArea.addEventListener('touchstart', (e) => {
+                    if (this.isSelecting) {
+                        e.preventDefault();
+                        const touch = e.touches[0];
+                        const mouseEvent = new MouseEvent('mousedown', {
+                            clientX: touch.clientX,
+                            clientY: touch.clientY
+                        });
+                        this.startSelection(mouseEvent);
+                    }
+                });
+                
+                this.textArea.addEventListener('touchmove', (e) => {
+                    if (this.isSelecting && this.selectionBox) {
+                        e.preventDefault();
+                        const touch = e.touches[0];
+                        const mouseEvent = new MouseEvent('mousemove', {
+                            clientX: touch.clientX,
+                            clientY: touch.clientY
+                        });
+                        this.updateSelection(mouseEvent);
+                    }
+                });
+                
+                this.textArea.addEventListener('touchend', (e) => {
+                    if (this.isSelecting && this.selectionBox) {
+                        e.preventDefault();
+                        const touch = e.changedTouches[0];
+                        const mouseEvent = new MouseEvent('mouseup', {
+                            clientX: touch.clientX,
+                            clientY: touch.clientY
+                        });
+                        this.endSelection(mouseEvent);
+                    }
+                });
+            }
+            
+            startSelectionMode() {
+                this.isSelecting = true;
+                this.textArea.classList.add('selecting');
+                this.clearSelection();
+                this.updateStatus('Şimdi fareyi sürükleyerek metin seçin', 'info');
+            }
+            
+            startSelection(e) {
+                const rect = this.textArea.getBoundingClientRect();
+                this.startX = e.clientX - rect.left;
+                this.startY = e.clientY - rect.top;
+                
+                // Seçim kutusunu oluştur
+                this.selectionBox = document.createElement('div');
+                this.selectionBox.className = 'selection-box';
+                this.selectionBox.style.left = this.startX + 'px';
+                this.selectionBox.style.top = this.startY + 'px';
+                this.selectionBox.style.width = '0px';
+                this.selectionBox.style.height = '0px';
+                
+                this.textArea.appendChild(this.selectionBox);
+            }
+            
+            updateSelection(e) {
+                if (!this.selectionBox) return;
+                
+                const rect = this.textArea.getBoundingClientRect();
+                const currentX = e.clientX - rect.left;
+                const currentY = e.clientY - rect.top;
+                
+                const left = Math.min(this.startX, currentX);
+                const top = Math.min(this.startY, currentY);
+                const width = Math.abs(currentX - this.startX);
+                const height = Math.abs(currentY - this.startY);
+                
+                this.selectionBox.style.left = left + 'px';
+                this.selectionBox.style.top = top + 'px';
+                this.selectionBox.style.width = width + 'px';
+                this.selectionBox.style.height = height + 'px';
+            }
+            
+            endSelection(e) {
+                if (!this.selectionBox) return;
+                
+                // Seçim kutusunun koordinatlarını al
+                const boxRect = this.selectionBox.getBoundingClientRect();
+                const textAreaRect = this.textArea.getBoundingClientRect();
+                
+                // Seçim kutusunu kaldır
+                this.selectionBox.remove();
+                this.selectionBox = null;
+                
+                // Seçim modunu kapat
+                this.isSelecting = false;
+                this.textArea.classList.remove('selecting');
+                
+                // Seçilen metni bul ve işaretle
+                this.findAndHighlightSelectedText(boxRect, textAreaRect);
+            }
+            
+            findAndHighlightSelectedText(boxRect, textAreaRect) {
+                // Önceki vurgulamaları temizle
+                this.clearHighlights();
+                
+                // Text node'ları bul
+                const walker = document.createTreeWalker(
+                    this.textArea,
+                    NodeFilter.SHOW_TEXT,
+                    null,
+                    false
+                );
+                
+                let selectedTextParts = [];
+                let node;
+                
+                while (node = walker.nextNode()) {
+                    const range = document.createRange();
+                    range.selectNodeContents(node);
+                    const nodeRect = range.getBoundingClientRect();
+                    
+                    // Eğer text node seçim kutusu içindeyse
+                    if (this.isRectIntersecting(boxRect, nodeRect)) {
+                        const text = node.textContent;
+                        
+                        // Karakterleri tek tek kontrol et
+                        for (let i = 0; i < text.length; i++) {
+                            const charRange = document.createRange();
+                            charRange.setStart(node, i);
+                            charRange.setEnd(node, i + 1);
+                            const charRect = charRange.getBoundingClientRect();
+                            
+                            if (this.isRectIntersecting(boxRect, charRect)) {
+                                selectedTextParts.push(text[i]);
+                            }
+                        }
+                        
+                        // Text node'u vurgula
+                        this.highlightTextNode(node, boxRect);
+                    }
+                }
+                
+                this.selectedText = selectedTextParts.join('').trim();
+                this.outputText.value = this.selectedText;
+                
+                if (this.selectedText) {
+                    this.updateStatus(`${this.selectedText.length} karakter seçildi`, 'success');
+                } else {
+                    this.updateStatus('Hiç metin seçilmedi. Tekrar deneyin.', 'info');
+                }
+            }
+            
+            isRectIntersecting(rect1, rect2) {
+                return !(rect1.right < rect2.left || 
+                        rect1.left > rect2.right || 
+                        rect1.bottom < rect2.top || 
+                        rect1.top > rect2.bottom);
+            }
+            
+            highlightTextNode(textNode, selectionRect) {
+                const parent = textNode.parentNode;
+                const text = textNode.textContent;
+                
+                // Metin parçalarını oluştur
+                let beforeText = '';
+                let selectedText = '';
+                let afterText = '';
+                
+                let foundStart = false;
+                let foundEnd = false;
+                
+                for (let i = 0; i < text.length; i++) {
+                    const charRange = document.createRange();
+                    charRange.setStart(textNode, i);
+                    charRange.setEnd(textNode, i + 1);
+                    const charRect = charRange.getBoundingClientRect();
+                    
+                    if (this.isRectIntersecting(selectionRect, charRect)) {
+                        if (!foundStart) foundStart = true;
+                        selectedText += text[i];
+                    } else {
+                        if (!foundStart) {
+                            beforeText += text[i];
+                        } else {
+                            afterText += text[i];
+                        }
+                    }
+                }
+                
+                if (selectedText) {
+                    // Yeni elementleri oluştur
+                    const fragment = document.createDocumentFragment();
+                    
+                    if (beforeText) {
+                        fragment.appendChild(document.createTextNode(beforeText));
+                    }
+                    
+                    const highlightSpan = document.createElement('span');
+                    highlightSpan.className = 'highlight';
+                    highlightSpan.textContent = selectedText;
+                    fragment.appendChild(highlightSpan);
+                    
+                    if (afterText) {
+                        fragment.appendChild(document.createTextNode(afterText));
+                    }
+                    
+                    // Orijinal text node'u değiştir
+                    parent.replaceChild(fragment, textNode);
+                }
+            }
+            
+            clearHighlights() {
+                const highlights = this.textArea.querySelectorAll('.highlight');
+                highlights.forEach(highlight => {
+                    const parent = highlight.parentNode;
+                    parent.replaceChild(document.createTextNode(highlight.textContent), highlight);
+                    parent.normalize();
+                });
+            }
+            
+            clearSelection() {
+                this.clearHighlights();
+                if (this.selectionBox) {
+                    this.selectionBox.remove();
+                    this.selectionBox = null;
+                }
+                this.selectedText = '';
+                this.outputText.value = '';
+                this.isSelecting = false;
+                this.textArea.classList.remove('selecting');
+                this.updateStatus('Seçim temizlendi', 'info');
+            }
+            
+            async copySelectedText() {
+                if (!this.selectedText) {
+                    this.updateStatus('Kopyalanacak metin yok. Önce metin seçin.', 'info');
+                    return;
+                }
+                
+                try {
+                    await navigator.clipboard.writeText(this.selectedText);
+                    this.showCopyFeedback();
+                    this.updateStatus('Metin başarıyla panoya kopyalandı!', 'success');
+                } catch (err) {
+                    // Fallback method
+                    this.outputText.select();
+                    document.execCommand('copy');
+                    this.showCopyFeedback();
+                    this.updateStatus('Metin başarıyla panoya kopyalandı!', 'success');
+                }
+            }
+            
+            showCopyFeedback() {
+                this.copyFeedback.classList.add('show');
+                setTimeout(() => {
+                    this.copyFeedback.classList.remove('show');
+                }, 3000);
+            }
+            
+            updateStatus(message, type) {
+                this.status.textContent = message;
+                this.status.className = `status ${type}`;
+            }
+        }
+        
+        // Uygulamayı başlat
+        document.addEventListener('DOMContentLoaded', () => {
+            new TextSelector();
+        });
+    </script>
+</body>
+</html>
